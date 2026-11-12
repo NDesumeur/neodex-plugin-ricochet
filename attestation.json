@@ -1,0 +1,9 @@
+{
+  "pluginId": "neodex.ricochet",
+  "repo": "NDesumeur/neodex-plugin-ricochet",
+  "version": "1.0.0",
+  "sha256": "2c2c03152e88b6d36879a1f953921466c10e43914e8374a4d5b0f332d4717eb7",
+  "approvedAt": "2026-11-12T12:24:44.697Z",
+  "neobase": ">=4.1.0",
+  "signature": "xX9wSYB+HelV9OZnZrTTSq1WexVa2+8hP7FvPdjs/K2lydtFhe/DAp1d8cV5Pu6D/NcEkCfr50gUi2eZegDkCw=="
+}
