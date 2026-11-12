@@ -988,8 +988,34 @@ setInterval(() => { if (rhCtx?.state === 'running' && (!view.classList.contains(
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) rhPause(); });  // Échap sort du plein écran : on met en pause
 $('gNew').onclick = () => { if (rh) rhSelect(rh.song, rh.diff); $('gNew').blur(); };
 function rhInfo() { const res = games.rhythm || {}, all = Object.values(res); showStats([['Morceaux joués', all.length], ['Notes S', all.filter(r => r.grade === 'S').length], ['Meilleur combo', all.reduce((m, r) => Math.max(m, r.combo || 0), 0)]]); }
+// les touches, réglables dans les options : clic sur une case, puis appui sur la nouvelle touche (Échap annule) ; une touche déjà prise échange sa place
+const KEY_NAME = k => k.length === 1 ? k.toUpperCase() : ({ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓'})[k] || k;
+const KEYS_BAN = [' ', 'p', 'Escape', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];  // jouer, pause, et les flèches qui restent toujours actives
+function keysSet(ks) { rcKeys(ks); document.querySelectorAll('.rhKeys button').forEach((b, i) => { b.textContent = KEY_NAME(RC_LETTERS[i]); }); }
+function keysUi() {  // construit au premier rhOpen : les réglages du jeu sont alors définis
+  if (document.querySelector('.rhKeys')) return;
+  const box = document.createElement('label'); box.className = 'rhKeys'; box.append('Touches ');
+  RC_LETTERS.forEach((_, i) => {
+    const b = document.createElement('button'); b.className = 'btn px'; b.style.cssText = 'width:auto;min-width:30px;margin:0 2px;padding:2px 6px'; b.textContent = KEY_NAME(RC_LETTERS[i]); b.dataset.key = i;
+    b.onclick = e => {
+      e.preventDefault(); b.textContent = '?';
+      const on = ev => {
+        ev.preventDefault(); ev.stopPropagation(); removeEventListener('keydown', on, true);
+        const k = ev.key.length === 1 ? ev.key.toLowerCase() : ev.key, ks = [...RC_LETTERS];
+        if (ev.key !== 'Escape' && !KEYS_BAN.includes(k) && k.length === 1) { const j = ks.indexOf(k); if (j >= 0) ks[j] = ks[i]; ks[i] = k; gstore('rhythmPrefs', {}).keys = ks; saveGames(); }
+        keysSet(ks); b.blur();
+      };
+      addEventListener('keydown', on, true);
+    };
+    box.append(b);
+  });
+  $('rhOffset').closest('.rhOpts').append(box);
+}
+
 function rhOpen() {
   const p = games.rhythmPrefs || {}; for (const id of ['rhVol', 'rhClick', 'rhOffset']) if (p[id] != null) $(id).value = p[id];
+  keysUi();
+  if (Array.isArray(p.keys) && p.keys.length === RC_LETTERS.length) keysSet(p.keys);
   rhOffMs = +$('rhOffset').value; rhInfo();
   if (rh) { rhList(); return gameLoop(rh, RHG.key, RHG.update, rhDrawAll); }
   const last = games.rhythmLast || {song: 0, diff: 'normal'}; rhSelect(last.song, last.diff).catch(() => rhSelect(0, 'normal'));
@@ -1000,9 +1026,10 @@ function rhOpen() {
    Notes longues : l'étincelle glisse le long du mur, garde la touche enfoncée. ---------- */
 const RC = {X0: 44, Y0: 30, X1: 276, Y1: 214, MIN: .12};  // l'intérieur de la cour ; MIN : écart minimum entre deux rebonds (s)
 const RC_KEYS = {d: 0, ArrowLeft: 0, f: 1, ArrowDown: 1, j: 2, ArrowUp: 2, k: 3, ArrowRight: 3};
-const RC_NAME = ['← D', '↓ F', '↑ J', '→ K'];
+const RC_NAME = ['← D', '↓ F', '↑ J', '→ K'], RC_LETTERS = ['d', 'f', 'j', 'k'];
+function rcKeys(ks) { RC_LETTERS.forEach(k => { delete RC_KEYS[k]; }); ks.forEach((k, i) => { RC_LETTERS[i] = k; RC_KEYS[k] = i; RC_NAME[i] = ['←', '↓', '↑', '→'][i] + ' ' + k.toUpperCase(); }); RHG.help[1][0] = RC_NAME.join(' · '); }
 const RHG = {key: 'ricochet', factor: 1, color: '#ffa84a',
-  help: [['Flèches ou D F J K : le mur que l\'étincelle va toucher', '#ffe0b0'], ['Gauche ← D · bas ↓ F · haut ↑ J · droite → K', '#ffe8c8'], ['Glissade dorée : garde la touche enfoncée', '#ffe0a0']],
+  help: [['Flèches ou tes 4 touches : le mur que l\'étincelle va toucher', '#ffe0b0'], ['← D · ↓ F · ↑ J · → K', '#ffe8c8'], ['Glissade dorée : garde la touche enfoncée', '#ffe0a0']],
   // une note à la fois (un accord n'en garde qu'une), écart minimum entre deux rebonds ; chaque rebond a sa place sur le mur, tirée au sort
   // (toujours la même pour un morceau), loin du rebond d'avant ; les notes longues deviennent des glissades le long du mur
   chart(base) {

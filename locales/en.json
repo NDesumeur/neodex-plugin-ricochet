@@ -382,5 +382,8 @@
  "éclatante": "dazzling",
  "électrique": "electric",
  "étoiles": "stars",
- "← D · ↓ F · ↑ J · → K : le mur touché · espace : jouer · P : pause": "← D · ↓ F · ↑ J · → K: the wall hit · space: play · P: pause"
+ "← D · ↓ F · ↑ J · → K : le mur touché · espace : jouer · P : pause": "← D · ↓ F · ↑ J · → K: the wall hit · space: play · P: pause",
+ "Tab": "Tab",
+ "Touches": "Keys",
+ "Flèches ou tes 4 touches : le mur que l'étincelle va toucher": "Arrows or your 4 keys: the wall the spark is about to hit"
 }

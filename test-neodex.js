@@ -1,6 +1,13 @@
 // lancé par le test « local » de NeoDex : choisit un morceau intégré, lance la partie, frappe quelques rebonds,
 // vérifie que la chanson avance et que les notes sont jugées, puis pause (avec NEO_SHOTS : garde des images du jeu)
 module.exports = async ({ pj, sleep }) => {
+  { // les touches réglables : la 1re case prend Q, puis reprend sa touche d'avant
+    const r = await pj(`(async () => { const b = document.querySelector('.rhKeys button'); if (!b) return 'pas de réglage des touches'; const old = b.textContent;
+      const press = k => dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true}));
+      b.click(); press('q'); await new Promise(r => setTimeout(r, 50)); if (b.textContent !== 'Q') return 'touche non prise : ' + b.textContent;
+      b.click(); press(old.toLowerCase()); await new Promise(r => setTimeout(r, 50)); return b.textContent === old ? '' : 'touche non rendue'; })()`);
+    if (r) throw new Error(r);
+  }
   const key = k => pj(`document.dispatchEvent(new KeyboardEvent('keydown', {key: '${k}', bubbles: true})), document.dispatchEvent(new KeyboardEvent('keyup', {key: '${k}', bubbles: true})), 0`);
   const label = () => pj(`document.getElementById('gc').getAttribute('aria-label') || ''`);
   const shot = async n => { if (!process.env.NEO_SHOTS) return; const d = await pj(`document.getElementById('gc').toDataURL()`); require('fs').writeFileSync(require('path').join(process.env.NEO_SHOTS, 'ricochet-' + n + '.png'), Buffer.from(d.split(',')[1], 'base64')); };

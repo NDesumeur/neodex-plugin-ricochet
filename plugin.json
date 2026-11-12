@@ -1,7 +1,7 @@
 {
   "id": "neodex.ricochet",
   "name": "Ricochet",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "NDesumeur",
   "description": "Jeu de rythme en rebonds : une étincelle file entre les quatre murs d'une cour de pierre ; frappe la flèche du mur qu'elle va toucher au moment où elle sonne le gong, et garde la touche sur les glissades dorées. Le rythme se lit dans sa trajectoire. Les 1200 morceaux de Rythme notés de 1 à 10 étoiles, ou des niveaux créés depuis ta musique ; combo, note de S à D.",
   "icon": "icon.png",
