@@ -867,7 +867,7 @@ async function rhPrepare(i, diff) {  // i : numéro d'un morceau du jeu, ou iden
 }
 const rhFull = on => { try { if (on && !document.fullscreenElement) cv.parentElement.requestFullscreen?.().catch(() => {}); if (!on && document.fullscreenElement) document.exitFullscreen(); } catch {} };
 function rhBegin() {  // plein écran (par-dessus la barre de NeoDex), puis le morceau part dans 2 secondes
-  rhFull(true); rhAudio(); rhCtx.resume(); rh.t0 = rhCtx.currentTime + 4; rhCount(); rh.mode = 'play';
+  rhFull(true); rhAudio(); rhCtx.resume(); rh.t0 = rhCtx.currentTime + 4; rh.hist = []; rhCount(); rh.mode = 'play';
   try { rh.src?.stop(); } catch {} rh.src = rhCtx.createBufferSource(); rh.src.buffer = rh.c.buffer; rh.src.connect(rhOut); rh.src.start(rh.t0);
 }
 function rhPress() {  // espace ou clic hors partie : jouer, reprendre, rejouer
@@ -881,10 +881,10 @@ function rhPause() { if (rh?.mode === 'play') { rh.mode = 'pause'; rhCtx?.suspen
 const rhWin = dt => RH.WIN.find(w => Math.abs(dt) <= w[0]);
 function rhHit(n, dt) {  // -> la fenêtre atteinte (PARFAIT, BIEN, OK), ou rien si la note est ratée
   const w = rhWin(dt); n.judged = true; if (!w) { rhMissed(n); return null; }
-  rh.dts.push(dt); rh.combo++; rh.maxCombo = Math.max(rh.maxCombo, rh.combo); rh.counts[w[1]]++; rh.score += Math.round(w[2] * (1 + Math.min(rh.combo, 100) / 100));
+  (rh.hist ??= []).push([n.t, {PARFAIT: 3, BIEN: 2, OK: 1}[w[1]] || 1]); rh.dts.push(dt); rh.combo++; rh.maxCombo = Math.max(rh.maxCombo, rh.combo); rh.counts[w[1]]++; rh.score += Math.round(w[2] * (1 + Math.min(rh.combo, 100) / 100));
   return w;
 }
-function rhMissed(n) { n.judged = true; n.missed = true; rh.combo = 0; rh.counts['RATÉ']++; }
+function rhMissed(n) { (rh.hist ??= []).push([n.t, 0]); n.judged = true; n.missed = true; rh.combo = 0; rh.counts['RATÉ']++; }
 function rhCheckEnd(now) {
   if (now <= rh.c.len + 1.5) return false;
   rh.mode = 'over'; rh.overAt = rh.tick; try { rh.src?.stop(); } catch {} rhFull(false);
@@ -910,6 +910,28 @@ function rhScreens(y0 = 90) {
   if (rh.mode === 'pause') gameText(g, W, [['PAUSE', '#ffffff', 12], ['Espace : reprendre', '#e8e0ff']], y0 + 20);
   if (rh.mode === 'over' && rh.tick - rh.overAt > 20) gameText(g, W, [['NOTE ' + rh.grade, rh.grade === 'S' ? '#ffd84a' : RHG.color, 14], [rh.score + ' points · ' + (rh.acc * 100).toFixed(1) + ' %', '#ffffff'], ['Combo max ' + rh.maxCombo + ' · ' + rhStarTxt(rh.stars), '#e8e0ff'],
     ['Parfait ' + rh.counts.PARFAIT + ' · Bien ' + rh.counts.BIEN + ' · OK ' + rh.counts.OK + ' · Raté ' + rh.counts['RATÉ'], '#a8a0c8'], [rh.record ? 'NOUVEAU RECORD !' : 'Espace : rejouer', '#ffd84a'], ...(rh.adj ? [['Décalage ajusté : ' + (rh.adj > 0 ? '+' : '') + rh.adj + ' ms', '#7ee07a']] : [])], y0 - 10);
+  if (rh.mode === 'over' && rh.tick - rh.overAt > 20) rhCurve(Math.min(g.canvas.height - 50, y0 - 10 + (rh.adj ? 6 : 5) * 14 + 16));
+}
+// la courbe de précision de l'écran de fin : la justesse le long du morceau (24 tranches ; 100 % = tout en PARFAIT), les notes ratées en rouge dessous
+function rhCurveData(hist, len, N = 24) {
+  const b = Array.from({length: N}, () => [0, 0]);
+  for (const [t, s] of hist) { const k = Math.min(N - 1, Math.max(0, Math.floor(t / len * N))); b[k][0] += s; b[k][1]++; }
+  return b.map(([s, n]) => n ? s / (n * 3) : null);
+}
+console.assert(rhCurveData([[0, 3], [1, 3], [9, 0], [9.5, 3]], 10, 2).join() === '1,0.5', 'rhCurveData');
+function rhCurve(y) {
+  const cw = g.canvas.width, N = 24, x0 = 22, w = cw - 64, h = 30, acc = rhCurveData(rh.hist || [], rh.c.len || 1, N), Y = a => Math.round(y + 6 + (1 - Math.max(0, Math.min(1, (a - .5) / .5))) * h);
+  g.fillStyle = 'rgba(7,3,20,.9)'; g.fillRect(x0 - 8, y - 9, w + 16, h + 22); px(g, RHG.color, x0 - 8, y - 9, w + 16, 1);
+  pxFont(g, 'PRÉCISION LE LONG DU MORCEAU', x0, y, '#a8a0c8', 6);
+  for (const [f, t] of [[1, '100'], [.75, '75']]) { for (let x = x0; x < x0 + w; x += 3) px(g, '#2a2050', x, Y(f), 1, 1); pxFont(g, t, x0 + w + 6, Y(f) + 3, '#5a4a8a', 5); }
+  let prev = null;
+  acc.forEach((a, k) => {
+    if (a == null) { prev = null; return; }
+    const xa = x0 + Math.round(k * w / N), xb = x0 + Math.round((k + 1) * w / N), yy = Y(a), col = a >= .9 ? '#7ee07a' : a >= .7 ? '#ffd84a' : '#ff4a5a';
+    if (prev != null) px(g, col, xa, Math.min(prev, yy), 1, Math.abs(prev - yy) + 2);
+    px(g, col, xa, yy, xb - xa, 2); prev = yy;
+  });
+  for (const [t, s] of rh.hist || []) if (!s) px(g, '#ff4a5a', x0 + Math.round(Math.min(1, t / (rh.c.len || 1)) * (w - 1)), y + h + 9, 1, 3);
 }
 const rhProgress = (now, col) => { px(g, '#1a1430', 0, 0, W, 2); px(g, col, 0, 0, Math.max(0, Math.min(1, now / rh.c.len)) * W, 2); };
 // la liste des morceaux, les imports, les réglages (le panneau de droite)
@@ -1106,16 +1128,25 @@ function rcUp(lane, now) {  // lâcher : une glissade en cours s'arrête là (sa
   for (const n of rh.notes) if (n.holding && n.lane === lane) { rcSettle(n, now); n.holding = false; n.done = true; if (now < n.end - .1) n.broke = true; else rh.judge = {text: 'FINI', col: '#ffd84a', t: 24}; }
 }
 /* le dessin : le dallage de la cour (mousse, rosace gravée), les murs de brique, les gongs, l'étincelle et sa traînée */
-const RC_BG = cnv(W, H, b => {
-  px(b, '#140e0c', 0, 0, W, H);
+const RC_THEMES = [
+  {name: 'cour', bg: '#140e0c', tiles: ['#3a3430', '#36302c', '#3e3834'], grout: '#2a2420', hl: '#4a4440', moss: ['#3a4a2a', '#4a5a30'], ring: ['#2a2420', '#2e2824'], brick: ['#7a3a2a', '#6a3224', '#82402e'], mortar: '#1a0e0a'},
+  {name: 'temple', bg: '#0e0a04', tiles: ['#b89a5a', '#a88a4a', '#c0a464'], grout: '#6a5228', hl: '#d8bc7a', moss: ['#e8d08a', '#8a6a30'], ring: ['#6a4a18', '#8a6424'], brick: ['#5a1a14', '#6a2018', '#4a1410'], mortar: '#e8b84a'},
+  {name: 'jardin', bg: '#0a0c08', tiles: ['#d8d0b8', '#d0c8b0', '#dcd4bc'], grout: null, hl: '#c0b89e', moss: ['#5a7a3a', '#4a6a30'], ring: ['#a8a088', '#b0a890'], brick: ['#4a6a2a', '#5a7a32', '#3e5a24'], mortar: '#1a2410'},
+  {name: 'glace', bg: '#060a12', tiles: ['#a8d0e8', '#98c4e0', '#b4daf0'], grout: '#6a9ab8', hl: '#e8f6ff', moss: ['#ffffff', '#d0ecff'], ring: ['#6a9ab8', '#7aaac8'], brick: ['#e8f0f8', '#d0e0f0', '#f4f8ff'], mortar: '#5a7a98'},
+];
+const rcTheme = () => RC_THEMES[(rh?.song || 0) % RC_THEMES.length];
+const RC_BGS = {};
+const rcBg = () => RC_BGS[rcTheme().name] ??= rcMakeBg(rcTheme());
+const rcMakeBg = T => cnv(W, H, b => {
+  px(b, T.bg, 0, 0, W, H);
   const r = seeded(13);
   for (let y = RC.Y0; y < RC.Y1; y += 16) for (let x = RC.X0; x < RC.X1; x += 16) {  // les dalles, chacune un peu différente
-    const c = ['#3a3430', '#36302c', '#3e3834'][Math.floor(r() * 3)]; px(b, c, x, y, 16, 16); px(b, '#2a2420', x, y, 16, 1); px(b, '#2a2420', x, y, 1, 16); px(b, '#4a4440', x + 1, y + 1, 14, 1);
-    for (let k = 0; k < 3; k++) if (r() < .35) px(b, ['#3a4a2a', '#4a5a30'][k % 2], x + 1 + Math.floor(r() * 14), y + 1 + Math.floor(r() * 14), 1 + (r() < .3), 1);
+    const c = T.tiles[Math.floor(r() * 3)]; px(b, c, x, y, 16, 16); if (T.grout) { px(b, T.grout, x, y, 16, 1); px(b, T.grout, x, y, 1, 16); px(b, T.hl, x + 1, y + 1, 14, 1); } else for (let k = 2; k < 16; k += 4) px(b, T.hl, x, y + k, 16, 1);  // le jardin : du sable ratissé
+    for (let k = 0; k < 3; k++) if (r() < .35) px(b, T.moss[k % 2], x + 1 + Math.floor(r() * 14), y + 1 + Math.floor(r() * 14), 1 + (r() < .3), 1);
   }
   const cx = (RC.X0 + RC.X1) / 2, cy = (RC.Y0 + RC.Y1) / 2;  // la rosace gravée au centre
-  for (let a = 0; a < 96; a++) { const t = a / 96 * Math.PI * 2; for (const R of [22, 34]) px(b, '#2a2420', cx + Math.cos(t) * R, cy + Math.sin(t) * R, 1, 1); const p = 28 + Math.cos(t * 8) * 6; px(b, '#2e2824', cx + Math.cos(t) * p, cy + Math.sin(t) * p, 1, 1); }
-  const brick = (x, y, w, h) => { for (let yy = y; yy < y + h; yy += 5) for (let xx = x - ((yy / 5) % 2) * 5; xx < x + w; xx += 10) { const x0 = Math.max(x, xx), x1 = Math.min(x + w, xx + 10); if (x1 <= x0) continue; px(b, '#1a0e0a', x0, yy, x1 - x0, Math.min(5, y + h - yy)); px(b, ['#7a3a2a', '#6a3224', '#82402e'][Math.floor(r() * 3)], x0 + 1, yy + 1, x1 - x0 - 1, Math.min(4, y + h - yy - 1)); } };
+  for (let a = 0; a < 96; a++) { const t = a / 96 * Math.PI * 2; for (const R of [22, 34]) px(b, T.ring[0], cx + Math.cos(t) * R, cy + Math.sin(t) * R, 1, 1); const p = 28 + Math.cos(t * 8) * 6; px(b, T.ring[1], cx + Math.cos(t) * p, cy + Math.sin(t) * p, 1, 1); }
+  const brick = (x, y, w, h) => { for (let yy = y; yy < y + h; yy += 5) for (let xx = x - ((yy / 5) % 2) * 5; xx < x + w; xx += 10) { const x0 = Math.max(x, xx), x1 = Math.min(x + w, xx + 10); if (x1 <= x0) continue; px(b, T.mortar, x0, yy, x1 - x0, Math.min(5, y + h - yy)); px(b, T.brick[Math.floor(r() * 3)], x0 + 1, yy + 1, x1 - x0 - 1, Math.min(4, y + h - yy - 1)); } };
   brick(RC.X0 - 12, RC.Y0 - 12, RC.X1 - RC.X0 + 24, 12); brick(RC.X0 - 12, RC.Y1, RC.X1 - RC.X0 + 24, 12); brick(RC.X0 - 12, RC.Y0, 12, RC.Y1 - RC.Y0); brick(RC.X1, RC.Y0, 12, RC.Y1 - RC.Y0);
   px(b, '#0a0606', RC.X0, RC.Y0, RC.X1 - RC.X0, 1); px(b, '#0a0606', RC.X0, RC.Y0, 1, RC.Y1 - RC.Y0);
 });
@@ -1127,7 +1158,7 @@ function rcGong(x, y, lane, lvl, lit) {  // un gong de cuivre sur le mur : lvl 0
 }
 function rcDraw() {
   const now = rhNow(), P = rcPos(rh.mode === 'play' || rh.mode === 'pause' || rh.mode === 'over' ? now : (rh.notes[0]?.t ?? 0) - 3);
-  g.drawImage(RC_BG, 0, 0);
+  g.drawImage(rcBg(), 0, 0);
   for (const [lane, x, y] of [[0, 18, 125], [3, W - 18, 125], [2, W / 2, 12], [1, W / 2, H - 3]]) pxFont(g, RC_NAME[lane], x, y, rh.held?.[lane] ? '#ffd84a' : '#a89080', 7, 'center');  // les touches, au milieu de chaque mur
   for (const [x, y] of [[RC.X0 - 6, RC.Y0 - 6], [RC.X1 + 6, RC.Y0 - 6], [RC.X0 - 6, RC.Y1 + 6], [RC.X1 + 6, RC.Y1 + 6]]) {  // les braseros des coins : une lueur, une coupe, des flammes qui dansent
     const f = Math.floor(rh.tick / 5 + x) % 3; px(g, 'rgba(255,150,60,.08)', x - 14, y - 14, 29, 29); px(g, 'rgba(255,150,60,.1)', x - 9, y - 9, 19, 19);
@@ -1176,7 +1207,21 @@ document.addEventListener('keyup', e => {
   if (e.key === ' ' && keyOk(e)) e.preventDefault();  // un bouton qui garderait le focus ne se déclenche pas à l'espace
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (RC_KEYS[k] != null) rcUp(RC_KEYS[k]);
 });
-addEventListener('blur', () => { if (rh?.held) rh.held = [0, 0, 0, 0]; });  // une touche lâchée hors de la fenêtre ne reste pas « tenue »
+addEventListener('blur', () => { if (rh?.held) rh.held = [0, 0, 0, 0]; });
+{  // la manette envoie les touches du clavier : croix ou X / A / Y / B = les murs gauche, bas, haut, droit ; Start = lancer ; Select = pause
+  const KEY = {14: 'ArrowLeft', 2: 'ArrowLeft', 13: 'ArrowDown', 0: 'ArrowDown', 12: 'ArrowUp', 3: 'ArrowUp', 15: 'ArrowRight', 1: 'ArrowRight', 9: ' ', 8: 'p'}, held = new Set();
+  const send = (k, type) => document.dispatchEvent(new KeyboardEvent(type, {key: k, bubbles: true}));
+  const loop = () => {
+    requestAnimationFrame(loop); if (!view.classList.contains('on') || !navigator.getGamepads) return;
+    const p = [...navigator.getGamepads()].find(Boolean); if (!p) return;
+    const down = new Set();
+    for (const [i, k] of Object.entries(KEY)) if (p.buttons[i]?.pressed) down.add(k);
+    if (rh?.mode !== 'play' && down.has('ArrowDown')) down.add(' ');  // hors partie, A lance aussi le morceau
+    for (const k of down) if (!held.has(k)) { held.add(k); send(k, 'keydown'); }
+    for (const k of [...held]) if (!down.has(k)) { held.delete(k); send(k, 'keyup'); }
+  };
+  requestAnimationFrame(loop);
+}  // une touche lâchée hors de la fenêtre ne reste pas « tenue »
 {  // vérification : les rebonds (sur leur mur, dans la cour, l'étincelle y est au bon moment), les écarts, les glissades, le jugement
   const c = rhCompose(RH_SONGS[3]), ch = Object.keys(RH_DIFFS).map(d => RHG.chart(rhChart(c, d), c, d)), bad = [];
   if (!ch.every(x => [0, 1, 2, 3].every(l => x.some(n => n.lane === l)))) bad.push('murs');
@@ -1196,6 +1241,8 @@ addEventListener('blur', () => { if (rh?.held) rh.held = [0, 0, 0, 0]; });  // u
   rh = keep;
   console.assert(!bad.length, 'ricochet', bad);
 }
+console.assert(RC_THEMES.every(T => rcMakeBg(T).width === W), 'ricochet thèmes');
+cv.__rh = {st: () => rh, finish: hist => { rh.hist = hist; rh.mode = 'play'; rhCheckEnd(1e9); }, bg: () => rcTheme().name, sel: i => rhSelect(i, rh.diff)};
 ctx.onOpen(() => rhOpen());
 }
 

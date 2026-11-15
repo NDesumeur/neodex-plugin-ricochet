@@ -1,5 +1,5 @@
 // lancé par le test « local » de NeoDex : choisit un morceau intégré, lance la partie, frappe quelques rebonds,
-// vérifie que la chanson avance et que les notes sont jugées, puis pause (avec NEO_SHOTS : garde des images du jeu)
+// vérifie que la chanson avance et que les notes sont jugées, puis pause, l'écran de fin et sa courbe, les décors selon le morceau (avec NEO_SHOTS : garde des images du jeu)
 module.exports = async ({ pj, sleep }) => {
   { // les touches réglables : la 1re case prend Q, puis reprend sa touche d'avant
     const r = await pj(`(async () => { const b = document.querySelector('.rhKeys button'); if (!b) return 'pas de réglage des touches'; const old = b.textContent;
@@ -25,5 +25,14 @@ module.exports = async ({ pj, sleep }) => {
   if (!m || +m[2] + +m[3] + +m[4] + +m[5] < 3) throw new Error('la partie devait avancer et des notes être jugées : « ' + l + ' »');
   await key('p'); await sleep(400);
   if (!/: pause,/.test(await label())) throw new Error('P devait mettre en pause : « ' + await label() + ' »');
-  return l;
+  // l'écran de fin avec la courbe de précision (une partie inventée : juste au début, des ratés au milieu), puis le décor qui change selon le morceau
+  await pj(`(() => { const T = document.getElementById('gc').__rh, rh = T.st(), L = rh.c.len, h = []; for (let i = 0; i < 200; i++) { const t = i / 200 * L, mid = t > L * .4 && t < L * .6; h.push([t, mid ? (i % 3 ? 1 : 0) : (i % 7 ? 3 : 2)]); } T.finish(h); return 0; })()`);
+  await sleep(800); await shot('2-fin');
+  const end = await pj(`(() => { const rh = document.getElementById('gc').__rh.st(); return [rh.mode, rh.hist.length, rh.grade].join(','); })()`);
+  if (!/^over,200,[SABCD]$/.test(end)) throw new Error('écran de fin : ' + end);
+  const bgs = [];
+  for (const i of [1, 2, 3]) { await pj(`document.getElementById('gc').__rh.sel(${i}), 0`); await sleep(1500); bgs.push(await pj(`document.getElementById('gc').__rh.bg()`)); await shot('3-decor-' + bgs.at(-1)); }
+  if (new Set(bgs).size < 3) throw new Error('décors : ' + bgs);
+  const errs2 = await pj(`window.__e.join(' | ')`); if (errs2) throw new Error('erreur : ' + errs2);
+  return l + ' · fin ' + end + ' · décors ' + bgs.join(', ');
 };
