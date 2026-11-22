@@ -1,9 +1,9 @@
 {
   "id": "neodex.ricochet",
   "name": "Ricochet",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "author": "NDesumeur",
-  "description": "Jeu de rythme en rebonds : une étincelle file entre les quatre murs d'une cour de pierre ; frappe la flèche du mur qu'elle va toucher au moment où elle sonne le gong, et garde la touche sur les glissades dorées. Le rythme se lit dans sa trajectoire. Les 1200 morceaux de Rythme notés de 1 à 10 étoiles, ou des niveaux créés depuis ta musique ; combo, note de S à D. La cour change selon le morceau (cour de briques, temple, jardin japonais, glace), on joue aussi à la manette, et l'écran de fin montre la courbe de précision le long du morceau.",
+  "description": "Jeu de rythme en rebonds : une étincelle file entre les quatre murs d'une cour de pierre ; frappe la flèche du mur qu'elle va toucher au moment où elle sonne le gong, et garde la touche sur les glissades dorées. Le rythme se lit dans sa trajectoire. Les 1200 morceaux de Rythme notés de 1 à 10 étoiles, ou des niveaux créés depuis ta musique ; combo, note de S à D. La cour change selon le morceau (cour de briques, temple, jardin japonais, glace), on joue aussi à la manette, et l'écran de fin montre la courbe de précision le long du morceau. Nouveau : deux étincelles à suivre en même temps, l'orange et la bleue (records à part). Aussi : des cours en hexagone et en triangle, et des murs qui bougent en musique.",
   "icon": "icon.png",
   "entry": "index.js",
   "view": "ricochet",

@@ -33,6 +33,19 @@ module.exports = async ({ pj, sleep }) => {
   const bgs = [];
   for (const i of [1, 2, 3]) { await pj(`document.getElementById('gc').__rh.sel(${i}), 0`); await sleep(1500); bgs.push(await pj(`document.getElementById('gc').__rh.bg()`)); await shot('3-decor-' + bgs.at(-1)); }
   if (new Set(bgs).size < 3) throw new Error('décors : ' + bgs);
+  // deux étincelles : l'option refait le morceau, avec deux listes de rebonds
+  await pj(`(() => { const s = document.getElementById('rcSpk'); s.value = '2'; s.dispatchEvent(new Event('change')); return 0; })()`); await sleep(1500);
+  const two = await pj(`(() => { const rh = document.getElementById('gc').__rh.st(); return rh.lists.length + ',' + rh.lists[1].length + ',' + rh.info.key; })()`);
+  await shot('4-deux-etincelles');
+  await pj(`(() => { const s = document.getElementById('rcSpk'); s.value = '1'; s.dispatchEvent(new Event('change')); return 0; })()`); await sleep(1000);
+  if (!/^2,[1-9]\d*,.*\*2(#\w+)?$/.test(two)) throw new Error('deux étincelles : ' + two);
+  // les cours : hexagone et triangle (le morceau se refait), puis les murs mobiles en jeu
+  const courts = [];
+  for (const v of ['hex', 'tri']) { await pj(`(() => { const s = document.getElementById('rcCourt'); s.value = '${v}'; s.dispatchEvent(new Event('change')); return 0; })()`); await sleep(1500);
+    courts.push(await pj(`document.getElementById('gc').__rh.court() + ':' + document.getElementById('gc').__rh.st().info.key.includes('#${v}')`)); await shot('5-cour-' + v); }
+  await pj(`(document.getElementById('rcMove').value = '1', 0)`); await key(' '); await sleep(6000); await shot('6-murs-mobiles'); await key('p'); await sleep(300);
+  await pj(`(() => { const s = document.getElementById('rcCourt'); s.value = 'auto'; s.dispatchEvent(new Event('change')); document.getElementById('rcMove').value = '0'; return 0; })()`); await sleep(1000);
+  if (courts.join() !== 'hex:true,tri:true') throw new Error('cours : ' + courts);
   const errs2 = await pj(`window.__e.join(' | ')`); if (errs2) throw new Error('erreur : ' + errs2);
-  return l + ' · fin ' + end + ' · décors ' + bgs.join(', ');
+  return l + ' · fin ' + end + ' · décors ' + bgs.join(', ') + ' · deux étincelles ok · hexagone, triangle, murs mobiles ok';
 };

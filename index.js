@@ -9,7 +9,7 @@ const HTML = `<div class="appWrap wide">
       <div class="row"><button class="btn" id="rhTabSongs">CHANSONS</button><button class="btn" id="rhTabMine">MES MUSIQUES</button></div>
       <div class="sysCard rhImport" id="rhImport" style="display:none"><div class="row"><button class="btn main" id="rhFileBtn">IMPORTER UN FICHIER AUDIO</button><input type="file" id="rhFile" accept="audio/*,.mp3,.m4a,.ogg,.opus,.wav,.flac,.webm" hidden></div><div class="row"><select class="f" id="rhMuList"></select><button class="btn" id="rhMuBtn">CRÉER LE NIVEAU</button></div><div class="row"><label>Difficulté <select class="f" id="rhStars"><option value="1">1 ★</option><option value="2">2 ★</option><option value="3" selected>3 ★</option><option value="4">4 ★</option><option value="5">5 ★</option><option value="6">6 ★</option><option value="7">7 ★</option><option value="8">8 ★</option><option value="9">9 ★</option><option value="10">10 ★</option></select></label></div><span class="hint" id="rhImpMsg">Un fichier ou une musique de NeoMusic : le jeu trouve son tempo et ses temps forts et en fait un niveau.</span></div>
       <div id="rhSongs"></div>
-      <div class="sysCard rhOpts"><label>Volume <input type="range" id="rhVol" min="0" max="100" value="70"></label><label>Son des clics <select class="f gSel" id="rhClick"><option value="0" selected>Doux</option><option value="1">Clap</option><option value="2">Bois</option><option value="3">Grosse caisse</option><option value="4">Cristal</option><option value="5">Pop</option><option value="6">Charleston</option><option value="7">Caisse claire</option><option value="8">Pluck</option><option value="9">Tok</option><option value="-1">Aucun</option></select></label><label>Décalage <input type="number" class="f" id="rhOffset" min="-300" max="300" step="5" value="0" style="width:80px" title="Réglé tout seul après chaque partie"> ms</label></div>
+      <div class="sysCard rhOpts"><label>Volume <input type="range" id="rhVol" min="0" max="100" value="70"></label><label>Son des clics <select class="f gSel" id="rhClick"><option value="0" selected>Doux</option><option value="1">Clap</option><option value="2">Bois</option><option value="3">Grosse caisse</option><option value="4">Cristal</option><option value="5">Pop</option><option value="6">Charleston</option><option value="7">Caisse claire</option><option value="8">Pluck</option><option value="9">Tok</option><option value="-1">Aucun</option></select></label><label title="La forme de la cour (records à part pour chacune)">Cour <select class="f gSel" id="rcCourt"><option value="auto" selected>Selon le morceau</option><option value="rect">Rectangle</option><option value="hex">Hexagone</option><option value="tri">Triangle</option></select></label><label title="Les murs se rapprochent et s'écartent en musique">Murs <select class="f gSel" id="rcMove"><option value="0" selected>Fixes</option><option value="1">Mobiles</option></select></label><label title="Deux étincelles à suivre en même temps (records à part)">Étincelles <select class="f gSel" id="rcSpk"><option value="1" selected>1</option><option value="2">2</option></select></label><label>Décalage <input type="number" class="f" id="rhOffset" min="-300" max="300" step="5" value="0" style="width:80px" title="Réglé tout seul après chaque partie"> ms</label></div>
       <div class="hint">L'étincelle rebondit de mur en mur : chaque rebond est une note. Frappe la flèche du mur qu'elle va toucher (← ou D à gauche, ↓ ou F en bas, ↑ ou J en haut, → ou K à droite) au moment où elle sonne le gong.</div><div class="hint">Lis la trajectoire : la direction dit quel mur, la vitesse dit quand. Le gong net est la prochaine cible, les pâles viennent ensuite. Sur une glissade dorée, garde la touche enfoncée jusqu'au bout. À la souris ou au doigt : touche près du mur.</div><div class="hint">La difficulté de chaque niveau est calculée sur ses notes (densité, passages chargés, changements de mur) : de 1★ à 10★.</div>
     </div></div>
 </div>`;
@@ -1058,7 +1058,7 @@ $('rhFs').onclick = () => { rhFull(!document.fullscreenElement); $('rhFs').blur(
 $('rhOffset').addEventListener('change', () => { rhOffMs = +$('rhOffset').value; });
 $('rhClick').onchange = () => { rhAudio(); rhCtx.resume(); rhClick(); };  // le son choisi, pour l'entendre
 $('rhVol').oninput = () => { if (rhOut) rhOut.gain.value = +$('rhVol').value / 100 * .6; };
-for (const id of ['rhVol', 'rhClick', 'rhOffset']) $(id).addEventListener('change', () => { gstore('rhythmPrefs', {})[id] = $(id).value; saveGames(); });
+for (const id of ['rhVol', 'rhClick', 'rhOffset', 'rcSpk', 'rcCourt', 'rcMove']) $(id).addEventListener('change', () => { gstore('rhythmPrefs', {})[id] = $(id).value; saveGames(); });
 setInterval(() => { if (rhCtx?.state === 'running' && (!view.classList.contains('on') || rh?.mode !== 'play')) rhCtx.suspend(); }, 200);  // la musique s'arrête avec la partie
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) rhPause(); });  // Échap sort du plein écran : on met en pause
 $('gNew').onclick = () => { if (rh) rhSelect(rh.song, rh.diff); $('gNew').blur(); };
@@ -1088,7 +1088,7 @@ function keysUi() {  // construit au premier rhOpen : les réglages du jeu sont 
 }
 
 function rhOpen() {
-  const p = games.rhythmPrefs || {}; for (const id of ['rhVol', 'rhClick', 'rhOffset']) if (p[id] != null) $(id).value = p[id];
+  const p = games.rhythmPrefs || {}; for (const id of ['rhVol', 'rhClick', 'rhOffset', 'rcSpk', 'rcCourt', 'rcMove']) if (p[id] != null) $(id).value = p[id];
   keysUi();
   if (Array.isArray(p.keys) && p.keys.length === RC_LETTERS.length) keysSet(p.keys);
   rhOffMs = +$('rhOffset').value; rhInfo();
@@ -1107,37 +1107,71 @@ const RHG = {key: 'ricochet', factor: 1, color: '#ffa84a',
   help: [['Flèches ou tes 4 touches : le mur que l\'étincelle va toucher', '#ffe0b0'], ['← D · ↓ F · ↑ J · → K', '#ffe8c8'], ['Glissade dorée : garde la touche enfoncée', '#ffe0a0']],
   // une note à la fois (un accord n'en garde qu'une), écart minimum entre deux rebonds ; chaque rebond a sa place sur le mur, tirée au sort
   // (toujours la même pour un morceau), loin du rebond d'avant ; les notes longues deviennent des glissades le long du mur
-  chart(base) {
-    const out = [], r = seeded(base.length * 31 + 7);
-    for (const n of base) { const last = out.at(-1); if (last && n.t < (last.end || last.t) + RC.MIN) continue; out.push({t: n.t, lane: n.lane, ...(n.len > .35 ? {end: n.t + n.len, ticks: 0} : {})}); }
-    rcPlace(out, r);
+  chart(base, c, d, S = rcSpk(), sh = rcShapeOf(c)) {
+    const out = [], r = seeded(base.length * 31 + 7), free = Array(S).fill(-9);
+    if (sh === 'tri') base = base.map((n, i) => n.lane === 2 ? {...n, lane: i % 2 ? 0 : 3} : n);
+    for (const n of base) {
+      let s = -1; for (let k = 0; k < S; k++) if (n.t >= free[k] + RC.MIN && (s < 0 || free[k] < free[s])) s = k;
+      if (s < 0) continue;
+      // deux étincelles : soit un vrai accord (sur deux murs différents), soit un écart assez grand entre deux rebonds
+      if (out.slice(-3).some(o => Math.abs(o.t - n.t) < RC.MIN * .6 && (Math.abs(o.t - n.t) > .02 || o.lane === n.lane))) continue;
+      out.push({t: n.t, lane: n.lane, s, ...(n.len > .35 ? {end: n.t + n.len, ticks: 0} : {})}); free[s] = n.len > .35 ? n.t + n.len : n.t;
+    }
+    for (let k = 0; k < S; k++) rcPlace(out.filter(n => n.s === k), r, sh);
     return out;
   },
-  reset() { Object.assign(rh, {judge: null, held: [0, 0, 0, 0], hit: null, holds: 0, trail: []}); },
+  reset() {
+    rcSh = rcShapeOf(rh.c); const two = rh.notes.some(n => n.s); Object.assign(rh, {judge: null, held: [0, 0, 0, 0], hit: null, holds: 0, trail: [], trails: [[], []], lists: two ? [0, 1].map(k => rh.notes.filter(n => n.s === k)) : [rh.notes]});
+    if (two && !rh.info.key.endsWith('*2')) rh.info.key += '*2';  // les records à deux étincelles sont à part
+    if (rcSh !== 'rect' && !rh.info.key.includes('#')) rh.info.key += '#' + rcSh;  // et ceux des autres cours aussi
+  },
   update() { const now = rhNow(); rcStep(now); rhCheckEnd(now); },
   draw() { rcDraw(); },
 };
 // un point sur le mur (lane 0 gauche, 1 bas, 2 haut, 3 droite), u de 0 à 1 le long du mur
-const rcWall = (lane, u) => lane === 0 ? [RC.X0, RC.Y0 + (RC.Y1 - RC.Y0) * u] : lane === 3 ? [RC.X1, RC.Y0 + (RC.Y1 - RC.Y0) * u] : [RC.X0 + (RC.X1 - RC.X0) * u, lane === 1 ? RC.Y1 : RC.Y0];
-function rcPlace(notes, r) {
+const rcSpk = () => +($('rcSpk')?.value || 1);
+const RC_SPK = [{t: ['#ffd84a', '#ff8a3a', '#a83a2a'], glow: 'rgba(255,180,90,.25)', mid: '#ff8a3a', hi: '#ffd84a', gong: ['#e8b84a', '#c8902a', '#7a5218']},
+  {t: ['#a8f0ff', '#3aa8ff', '#2a4aa8'], glow: 'rgba(90,180,255,.25)', mid: '#3aa8ff', hi: '#a8f0ff', gong: ['#a8e0f0', '#5aa8c8', '#2a5a7a']}];
+// 1.3.0 : les cours en hexagone et en triangle. Chaque touche garde son côté : ← les murs de gauche, → ceux de droite, ↑ le haut, ↓ le bas
+// (le triangle n'a pas de mur du haut). L[lane] : le chemin du mur (une ligne brisée), parcouru par u de 0 à 1
+const RC_SHAPES = (() => { const {X0, Y0, X1, Y1} = RC, cx = (X0 + X1) / 2, cy = (Y0 + Y1) / 2, h = 58;
+  return {rect: {v: [[X0, Y0], [X1, Y0], [X1, Y1], [X0, Y1]], L: [[[X0, Y0], [X0, Y1]], [[X0, Y1], [X1, Y1]], [[X0, Y0], [X1, Y0]], [[X1, Y0], [X1, Y1]]]},
+    hex: {v: [[cx - h, Y0], [cx + h, Y0], [X1, cy], [cx + h, Y1], [cx - h, Y1], [X0, cy]], L: [[[cx - h, Y0], [X0, cy], [cx - h, Y1]], [[cx - h, Y1], [cx + h, Y1]], [[cx - h, Y0], [cx + h, Y0]], [[cx + h, Y0], [X1, cy], [cx + h, Y1]]]},
+    tri: {v: [[cx, Y0], [X1, Y1], [X0, Y1]], L: [[[cx, Y0], [X0, Y1]], [[X0, Y1], [X1, Y1]], null, [[cx, Y0], [X1, Y1]]]}}; })();
+const RC_COURTS = ['rect', 'hex', 'tri'];
+let rcSh = 'rect';  // la cour du morceau en cours
+const rcShapeOf = c => { const v = $('rcCourt')?.value || 'auto'; return v !== 'auto' ? v : RC_COURTS[Math.round(c?.len || 0) % 3]; };  // « selon le morceau » : la même cour pour toutes ses difficultés
+const rcLen = (lane, sh = rcSh) => { const P = RC_SHAPES[sh].L[lane]; let s = 0; for (let i = 1; i < P.length; i++) s += Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]); return s; };
+function rcWall(lane, u, sh = rcSh) {  // le point du mur à la fraction u de son chemin
+  const P = RC_SHAPES[sh].L[lane]; let left = Math.max(0, Math.min(1, u)) * rcLen(lane, sh);
+  for (let i = 1; i < P.length; i++) { const [ax, ay] = P[i - 1], [bx, by] = P[i], L = Math.hypot(bx - ax, by - ay); if (left <= L || i === P.length - 1) { const f = Math.min(1, left / L); return [ax + (bx - ax) * f, ay + (by - ay) * f]; } left -= L; }
+}
+const rcSegD = (x, y, [ax, ay], [bx, by]) => { const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, f = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L2)); return [Math.hypot(x - ax - dx * f, y - ay - dy * f), f * Math.sqrt(L2)]; };
+const rcLaneAt = (x, y, sh = rcSh) => { let best = 0, bd = 1e9; RC_SHAPES[sh].L.forEach((P, l) => { if (P) for (let i = 1; i < P.length; i++) { const d = rcSegD(x, y, P[i - 1], P[i])[0]; if (d < bd) { bd = d; best = l; } } }); return best; };  // le mur le plus proche
+const rcInPoly = (P, x, y) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+{ const ok = RC_COURTS.every(sh => [0, 1, 2, 3].every(l => !RC_SHAPES[sh].L[l] || [0, .3, .5, 1].every(u => { const [x, y] = rcWall(l, u, sh); return rcLaneAt(x, y, sh) === l || u === 0 || u === 1; })));
+  const [a, b] = rcWall(0, .5, 'hex'); console.assert(ok && a === RC.X0 && Math.abs(b - (RC.Y0 + RC.Y1) / 2) < 1e-9 && rcWall(0, 0, 'rect')[1] === RC.Y0, 'rcWall'); }
+// les murs mobiles : la cour respire, lentement sur deux mesures et d'un petit coup sur chaque temps
+const rcBreath = now => { if ($('rcMove')?.value !== '1' || !(now > 0)) return 1; const b = 60 / (rh.info?.bpm || 120); return .93 + .07 * Math.cos(2 * Math.PI * now / (8 * b)) - .02 * Math.max(0, 1 - (now / b % 1) * 4); };
+function rcPlace(notes, r, sh = rcSh) {
   let px0 = (RC.X0 + RC.X1) / 2, py0 = (RC.Y0 + RC.Y1) / 2;
   for (const n of notes) {
     let best = null;
-    for (let k = 0; k < 6; k++) { const u = .12 + r() * .76, [x, y] = rcWall(n.lane, u), d = Math.hypot(x - px0, y - py0); if (!best || d > best[2]) best = [u, [x, y], d]; if (d > 60) break; }
+    for (let k = 0; k < 6; k++) { const u = .12 + r() * .76, [x, y] = rcWall(n.lane, u, sh), d = Math.hypot(x - px0, y - py0); if (!best || d > best[2]) best = [u, [x, y], d]; if (d > 60) break; }
     n.u = best[0]; [n.x, n.y] = best[1];
     if (n.end) {  // la glissade : vers le coin le plus loin, au plus 60 % du mur
-      const dir = n.u < .5 ? 1 : -1, len = n.lane === 0 || n.lane === 3 ? RC.Y1 - RC.Y0 : RC.X1 - RC.X0;
-      n.u2 = n.u + dir * Math.min(.6, Math.max(.15, (n.end - n.t) * 60 / len)); [n.x2, n.y2] = rcWall(n.lane, n.u2);
+      const dir = n.u < .5 ? 1 : -1, len = rcLen(n.lane, sh);
+      n.u2 = n.u + dir * Math.min(.6, Math.max(.15, (n.end - n.t) * 60 / len)); [n.x2, n.y2] = rcWall(n.lane, n.u2, sh);
     }
     [px0, py0] = n.end ? [n.x2, n.y2] : [n.x, n.y];
   }
 }
 // où est l'étincelle à l'instant t : en vol entre deux rebonds (une courbe qui se creuse vers le centre quand les deux rebonds sont sur le même mur),
 // ou en glissade le long du mur
-function rcPos(t) {
-  const N = rh.notes, cx = (RC.X0 + RC.X1) / 2, cy = (RC.Y0 + RC.Y1) / 2;
+function rcPos(t, N = rh.notes) {
+  const cx = (RC.X0 + RC.X1) / 2, cy = (RC.Y0 + RC.Y1) / 2;
   if (!N.length) return {x: cx, y: cy, i: 0};
-  let i = rh.seg || 0; while (i > 0 && N[i - 1].t > t) i--; while (i < N.length && N[i].t <= t) i++; rh.seg = i;
+  let i = N.seg || 0; while (i > 0 && N[i - 1].t > t) i--; while (i < N.length && N[i].t <= t) i++; N.seg = i;
   const pv = N[i - 1];
   if (pv?.end && t < pv.end) { const s = (t - pv.t) / (pv.end - pv.t); return {x: pv.x + (pv.x2 - pv.x) * s, y: pv.y + (pv.y2 - pv.y) * s, i, slide: pv}; }
   if (i >= N.length) return {x: pv.end ? pv.x2 : pv.x, y: pv.end ? pv.y2 : pv.y, i};
@@ -1187,8 +1221,8 @@ const RC_THEMES = [
 ];
 const rcTheme = () => RC_THEMES[(rh?.song || 0) % RC_THEMES.length];
 const RC_BGS = {};
-const rcBg = () => RC_BGS[rcTheme().name] ??= rcMakeBg(rcTheme());
-const rcMakeBg = T => cnv(W, H, b => {
+const rcBg = () => RC_BGS[rcTheme().name + rcSh] ??= rcMakeBg(rcTheme(), rcSh);
+const rcMakeBg = (T, sh = 'rect') => cnv(W, H, b => {
   px(b, T.bg, 0, 0, W, H);
   const r = seeded(13);
   for (let y = RC.Y0; y < RC.Y1; y += 16) for (let x = RC.X0; x < RC.X1; x += 16) {  // les dalles, chacune un peu différente
@@ -1200,37 +1234,53 @@ const rcMakeBg = T => cnv(W, H, b => {
   const brick = (x, y, w, h) => { for (let yy = y; yy < y + h; yy += 5) for (let xx = x - ((yy / 5) % 2) * 5; xx < x + w; xx += 10) { const x0 = Math.max(x, xx), x1 = Math.min(x + w, xx + 10); if (x1 <= x0) continue; px(b, T.mortar, x0, yy, x1 - x0, Math.min(5, y + h - yy)); px(b, T.brick[Math.floor(r() * 3)], x0 + 1, yy + 1, x1 - x0 - 1, Math.min(4, y + h - yy - 1)); } };
   brick(RC.X0 - 12, RC.Y0 - 12, RC.X1 - RC.X0 + 24, 12); brick(RC.X0 - 12, RC.Y1, RC.X1 - RC.X0 + 24, 12); brick(RC.X0 - 12, RC.Y0, 12, RC.Y1 - RC.Y0); brick(RC.X1, RC.Y0, 12, RC.Y1 - RC.Y0);
   px(b, '#0a0606', RC.X0, RC.Y0, RC.X1 - RC.X0, 1); px(b, '#0a0606', RC.X0, RC.Y0, 1, RC.Y1 - RC.Y0);
+  if (sh === 'rect') return;
+  const V = RC_SHAPES[sh].v, hs = (a, c) => { const x = Math.sin(a * 127.1 + c * 311.7) * 43758.5; return x - Math.floor(x); };
+  for (let y = RC.Y0 - 12; y < RC.Y1 + 12; y++) for (let x = RC.X0 - 12; x < RC.X1 + 12; x++) {
+    if (rcInPoly(V, x + .5, y + .5)) continue;
+    let d = 1e9, s = 0; V.forEach((a, i) => { const [dd, ss] = rcSegD(x + .5, y + .5, a, V[(i + 1) % V.length]); if (dd < d) { d = dd; s = ss + i * 1000; } });
+    if (d >= 12) { px(b, T.bg, x, y, 1, 1); continue; }
+    const row = Math.floor(d / 5), sj = s + (row % 2) * 5;  // des rangées de briques parallèles au mur, décalées d'une rangée à l'autre
+    px(b, d < 1 ? '#0a0606' : d % 5 < 1 || sj % 10 < 1 ? T.mortar : T.brick[Math.floor(hs(row, Math.floor(sj / 10)) * 3)], x, y, 1, 1);
+  }
 });
-function rcGong(x, y, lane, lvl, lit) {  // un gong de cuivre sur le mur : lvl 0 = la prochaine cible (nette), plus loin = de plus en plus pâle
-  const r = 6, col = lit ? ['#fff0b0', '#ffd84a', '#c8902a'] : ['#e8b84a', '#c8902a', '#7a5218'];
+function rcGong(x, y, lane, lvl, lit, k = 0) {  // un gong de cuivre sur le mur : lvl 0 = la prochaine cible (nette), plus loin = de plus en plus pâle
+  const r = 6, col = lit ? ['#fff0b0', '#ffd84a', '#c8902a'] : RC_SPK[k].gong;
   g.globalAlpha = lvl === 0 ? 1 : lvl === 1 ? .55 : .3;
   for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) { const d = Math.hypot(xx, yy); if (d > r + .3) continue; px(g, d > r - 1 ? '#2a1a08' : xx + yy < -3 ? col[0] : d < 2.5 ? col[2] : col[1], x + xx, y + yy, 1, 1); }
   g.globalAlpha = 1;
 }
+function rcSpark(N, k, now, T) {  // une étincelle : ses glissades, ses 3 prochains gongs, son trajet en pointillé, sa traînée et son cœur
+  const P = rcPos(T, N), tr = (rh.trails ||= [[], []])[k], C = RC_SPK[k];
+  // les glissades dorées le long du mur, puis les gongs à venir (les 3 prochains), puis le trajet jusqu'au prochain (en pointillé)
+  for (let j = Math.max(0, P.i - 2); j < Math.min(N.length, P.i + 3); j++) { const n = N[j]; if (!n.end || n.missed || n.broke || n.end < now) continue; const s = Math.max(0, (now - n.t) / (n.end - n.t)), sx = n.x + (n.x2 - n.x) * s, sy = n.y + (n.y2 - n.y) * s;
+    for (let k = 0; k <= 20; k++) { const x = sx + (n.x2 - sx) * k / 20, y = sy + (n.y2 - sy) * k / 20; px(g, '#c8902a', x - 2, y - 2, 4, 4); px(g, '#ffd84a', x - 1, y - 1, 2, 2); } }
+  for (let j = Math.min(N.length, P.i + 3) - 1; j >= P.i; j--) rcGong(N[j].x, N[j].y, N[j].lane, j - P.i, false, k);
+  if (P.i < N.length && rh.mode !== 'over') { const n = N[P.i]; for (let k = 1; k < 12; k++) { const s = k / 12, [ax, ay] = P.from || [P.x, P.y], [qx, qy] = P.ctl || [(ax + n.x) / 2, (ay + n.y) / 2]; if (P.slide) break;
+    const x = (1 - s) ** 2 * ax + 2 * (1 - s) * s * qx + s * s * n.x, y = (1 - s) ** 2 * ay + 2 * (1 - s) * s * qy + s * s * n.y; if (k % 2) px(g, 'rgba(255,200,140,.35)', x, y, 1, 1); } }
+  // l'étincelle : traînée qui refroidit (jaune, orange, rouge), puis le cœur blanc
+  tr.push([P.x, P.y]); if (tr.length > 10) tr.shift();
+  tr.forEach(([x, y], q) => { const c = q > 7 ? C.t[0] : q > 4 ? C.t[1] : C.t[2]; g.globalAlpha = .3 + q / 14; px(g, c, Math.round(x) - 1, Math.round(y) - 1, 3, 3); }); g.globalAlpha = 1;
+  px(g, C.glow, Math.round(P.x) - 5, Math.round(P.y) - 5, 11, 11); px(g, C.mid, Math.round(P.x) - 3, Math.round(P.y) - 2, 7, 5); px(g, C.mid, Math.round(P.x) - 2, Math.round(P.y) - 3, 5, 7); px(g, C.hi, Math.round(P.x) - 2, Math.round(P.y) - 1, 5, 3); px(g, C.hi, Math.round(P.x) - 1, Math.round(P.y) - 2, 3, 5); px(g, '#ffffff', Math.round(P.x) - 1, Math.round(P.y) - 1, 2, 2);
+}
 function rcDraw() {
   const now = rhNow(), P = rcPos(rh.mode === 'play' || rh.mode === 'pause' || rh.mode === 'over' ? now : (rh.notes[0]?.t ?? 0) - 3);
+  const sB = rcBreath(now), CX = (RC.X0 + RC.X1) / 2, CY = (RC.Y0 + RC.Y1) / 2;
+  if (sB !== 1) { px(g, rcTheme().bg, 0, 0, W, H); g.save(); g.translate(CX, CY); g.scale(sB, sB); g.translate(-CX, -CY); }
   g.drawImage(rcBg(), 0, 0);
-  for (const [lane, x, y] of [[0, 18, 125], [3, W - 18, 125], [2, W / 2, 12], [1, W / 2, H - 3]]) pxFont(g, RC_NAME[lane], x, y, rh.held?.[lane] ? '#ffd84a' : '#a89080', 7, 'center');  // les touches, au milieu de chaque mur
-  for (const [x, y] of [[RC.X0 - 6, RC.Y0 - 6], [RC.X1 + 6, RC.Y0 - 6], [RC.X0 - 6, RC.Y1 + 6], [RC.X1 + 6, RC.Y1 + 6]]) {  // les braseros des coins : une lueur, une coupe, des flammes qui dansent
+  for (const [lane, x, y] of rcSh === 'rect' ? [[0, 18, 125], [3, W - 18, 125], [2, W / 2, 12], [1, W / 2, H - 3]] : [0, 1, 2, 3].filter(l => RC_SHAPES[rcSh].L[l]).map(l => { const [x, y] = rcWall(l, .5), dx = x - CX, dy = y - CY, k = 26 / Math.hypot(dx, dy); return [l, Math.max(18, Math.min(W - 18, x + dx * k)), Math.max(12, Math.min(H - 3, y + dy * k + 3))]; })) pxFont(g, RC_NAME[lane], x, y, rh.held?.[lane] ? '#ffd84a' : '#a89080', 7, 'center');  // les touches, au milieu de chaque mur
+  for (const [x, y] of RC_SHAPES[rcSh].v.map(([x, y]) => { const dx = x - CX, dy = y - CY, k = 8 / Math.hypot(dx, dy); return [Math.round(x + dx * k), Math.round(y + dy * k)]; })) {  // les braseros des coins : une lueur, une coupe, des flammes qui dansent
     const f = Math.floor(rh.tick / 5 + x) % 3; px(g, 'rgba(255,150,60,.08)', x - 14, y - 14, 29, 29); px(g, 'rgba(255,150,60,.1)', x - 9, y - 9, 19, 19);
     px(g, '#1a0e0a', x - 5, y, 11, 5); px(g, '#5a5a62', x - 4, y + 1, 9, 3); px(g, '#8a8a92', x - 4, y + 1, 9, 1);
     px(g, '#e8501a', x - 3, y - 3 - f, 7, 4 + f); px(g, '#ffa83a', x - 2, y - 5 + (f === 1), 5, 5); px(g, '#ffe88a', x - 1, y - 2, 3, 2);
   }
-  // les glissades dorées le long du mur, puis les gongs à venir (les 3 prochains), puis le trajet jusqu'au prochain (en pointillé)
-  const N = rh.notes;
-  for (let j = Math.max(0, P.i - 2); j < Math.min(N.length, P.i + 3); j++) { const n = N[j]; if (!n.end || n.missed || n.broke || n.end < now) continue; const s = Math.max(0, (now - n.t) / (n.end - n.t)), sx = n.x + (n.x2 - n.x) * s, sy = n.y + (n.y2 - n.y) * s;
-    for (let k = 0; k <= 20; k++) { const x = sx + (n.x2 - sx) * k / 20, y = sy + (n.y2 - sy) * k / 20; px(g, '#c8902a', x - 2, y - 2, 4, 4); px(g, '#ffd84a', x - 1, y - 1, 2, 2); } }
-  for (let j = Math.min(N.length, P.i + 3) - 1; j >= P.i; j--) rcGong(N[j].x, N[j].y, N[j].lane, j - P.i, false);
+  const N = rh.notes, T = rh.mode === 'play' || rh.mode === 'pause' || rh.mode === 'over' ? now : (rh.notes[0]?.t ?? 0) - 3;
+  (rh.lists || [N]).forEach((L, k) => rcSpark(L, k, now, T));
   for (const f of rh.fx) if (f.k === 'gong' && f.t < 8) rcGong(f.x, f.y, f.lane, 0, true);
-  if (P.i < N.length && rh.mode !== 'over') { const n = N[P.i]; for (let k = 1; k < 12; k++) { const s = k / 12, [ax, ay] = P.from || [P.x, P.y], [qx, qy] = P.ctl || [(ax + n.x) / 2, (ay + n.y) / 2]; if (P.slide) break;
-    const x = (1 - s) ** 2 * ax + 2 * (1 - s) * s * qx + s * s * n.x, y = (1 - s) ** 2 * ay + 2 * (1 - s) * s * qy + s * s * n.y; if (k % 2) px(g, 'rgba(255,200,140,.35)', x, y, 1, 1); } }
-  // l'étincelle : traînée qui refroidit (jaune, orange, rouge), puis le cœur blanc
-  rh.trail.push([P.x, P.y]); if (rh.trail.length > 10) rh.trail.shift();
-  rh.trail.forEach(([x, y], k) => { const c = k > 7 ? '#ffd84a' : k > 4 ? '#ff8a3a' : '#a83a2a'; g.globalAlpha = .3 + k / 14; px(g, c, Math.round(x) - 1, Math.round(y) - 1, 3, 3); }); g.globalAlpha = 1;
-  px(g, 'rgba(255,180,90,.25)', Math.round(P.x) - 5, Math.round(P.y) - 5, 11, 11); px(g, '#ff8a3a', Math.round(P.x) - 3, Math.round(P.y) - 2, 7, 5); px(g, '#ff8a3a', Math.round(P.x) - 2, Math.round(P.y) - 3, 5, 7); px(g, '#ffd84a', Math.round(P.x) - 2, Math.round(P.y) - 1, 5, 3); px(g, '#ffd84a', Math.round(P.x) - 1, Math.round(P.y) - 2, 3, 5); px(g, '#ffffff', Math.round(P.x) - 1, Math.round(P.y) - 1, 2, 2);
   for (const f of rh.fx) if (f.k === 'gong') { const R = 8 + f.t * 1.2; g.globalAlpha = Math.max(0, 1 - f.t / 20); for (let a = 0; a < 32; a++) { const x = f.x + Math.cos(a / 32 * Math.PI * 2) * R, y = f.y + Math.sin(a / 32 * Math.PI * 2) * R; if (x > RC.X0 - 1 && x < RC.X1 + 1 && y > RC.Y0 - 1 && y < RC.Y1 + 1) px(g, f.col, x, y, 1, 1); } g.globalAlpha = 1; }
   for (const s of rh.sparks) { g.globalAlpha = s.life / 18; px(g, s.col, s.x, s.y, 2, 2); g.globalAlpha = 1; }
   if (rh.judge && rh.mode === 'play') pxFont(g, rh.judge.text, (RC.X0 + RC.X1) / 2, (RC.Y0 + RC.Y1) / 2 + 3, rh.judge.col, 7, 'center');
+  if (sB !== 1) g.restore();
   if (rh.mode !== 'ready' && rh.mode !== 'load') {
     rhProgress(now, '#ffa84a'); pxFont(g, String(rh.score).padStart(7, '0'), 4, 14, '#ffffff', 7);
     if (rh.combo > 4) pxFont(g, rh.combo + ' combo', W - 4, 14, '#ffd84a', 7, 'right');
@@ -1238,6 +1288,7 @@ function rcDraw() {
   }
   if (rh.mode === 'play' && now < 0) pxFont(g, String(Math.ceil(-now)), W / 2, 90, '#ffd84a', 16, 'center');
   rhScreens(60);
+  if (rh.mode === 'ready' && rh.lists?.length > 1) pxFont(g, 'DEUX ÉTINCELLES : L\'ORANGE ET LA BLEUE', W / 2, 200, '#8ad8ff', 7, 'center');
   if (rh.tick % 15 === 0) cv.setAttribute('aria-label', 'Ricochet, ' + (rh.info?.name || '') + ' : ' + ({ready: 'prêt', load: 'chargement', play: 'en jeu', pause: 'pause', over: 'fini'}[rh.mode] || rh.mode) + ', score ' + rh.score + ', combo ' + rh.combo + ', ' +
     Object.entries(rh.counts).map(([k, v]) => k.toLowerCase() + ' ' + v).join(', ') + ', prochain mur ' + (N[P.i] ? ['gauche', 'bas', 'haut', 'droite'][N[P.i].lane] : 'aucun') + '.');
 }
@@ -1245,7 +1296,7 @@ function rcDraw() {
 const rcPtr = new Map();
 cv.onpointerdown = e => {
   e.preventDefault(); if (!rh) return; if (rh.mode !== 'play') { rhPress(); return; }
-  const [x, y] = cpos(e), d = [x - RC.X0, RC.Y1 - y, y - RC.Y0, RC.X1 - x], lane = d.indexOf(Math.min(...d)); rcPtr.set(e.pointerId, lane); rcHit(lane);
+  const [x, y] = cpos(e), lane = rcLaneAt(x, y); rcPtr.set(e.pointerId, lane); rcHit(lane);
 };
 cv.onpointerup = cv.onpointercancel = e => { const l = rcPtr.get(e.pointerId); if (l != null) { rcPtr.delete(e.pointerId); rcUp(l); } };
 document.addEventListener('keydown', e => {
@@ -1274,7 +1325,7 @@ addEventListener('blur', () => { if (rh?.held) rh.held = [0, 0, 0, 0]; });
   requestAnimationFrame(loop);
 }  // une touche lâchée hors de la fenêtre ne reste pas « tenue »
 {  // vérification : les rebonds (sur leur mur, dans la cour, l'étincelle y est au bon moment), les écarts, les glissades, le jugement
-  const c = rhCompose(RH_SONGS[3]), ch = Object.keys(RH_DIFFS).map(d => RHG.chart(rhChart(c, d), c, d)), bad = [];
+  const c = rhCompose(RH_SONGS[3]), ch = Object.keys(RH_DIFFS).map(d => RHG.chart(rhChart(c, d), c, d, 1, 'rect')), bad = [];
   if (!ch.every(x => [0, 1, 2, 3].every(l => x.some(n => n.lane === l)))) bad.push('murs');
   if (!ch.some(x => x.some(n => n.end))) bad.push('glissades');
   if (ch.some(x => x.some(n => n.x < RC.X0 - .01 || n.x > RC.X1 + .01 || n.y < RC.Y0 - .01 || n.y > RC.Y1 + .01 || (n.end && (n.u2 < 0 || n.u2 > 1))))) bad.push('hors de la cour');
@@ -1290,10 +1341,18 @@ addEventListener('blur', () => { if (rh?.held) rh.held = [0, 0, 0, 0]; });
   const n3 = rh.notes[3]; rcStep(3.25); rcStep(3.5); rcUp(0, 3.55); rcUp(3, 3.55); rcUp(3, 3.55); rcUp(1, 3.55); rcStep(3.7);
   if (rh.counts.PARFAIT !== 3 || !rh.notes[1].missed || !n3.broke || n3.ticks !== 5) bad.push('jugement ' + JSON.stringify(rh.counts) + ' ' + n3.ticks);
   rh = keep;
+  const two = Object.keys(RH_DIFFS).map(d => RHG.chart(rhChart(c, d), c, d, 2, 'rect'));
+  if (!two.every(x => x.some(n => n.s === 1) && x.length > ch[0].length * .8)) bad.push('deux étincelles');
+  for (const x of two) for (const k of [0, 1]) { const L = x.filter(n => n.s === k); if (L.some((n, i) => i && n.t < (L[i - 1].end || L[i - 1].t) + RC.MIN - 1e-6)) bad.push('écart étincelle ' + k); }
+  if (two.some(x => x.some((n, i) => i && Math.abs(n.t - x[i - 1].t) < RC.MIN * .6 && (Math.abs(n.t - x[i - 1].t) > .02 || n.lane === x[i - 1].lane)))) bad.push('accords');
+  for (const sh of ['hex', 'tri']) { const x = RHG.chart(rhChart(c, 'difficile'), c, 'difficile', 1, sh);
+    if (x.some(n => !RC_SHAPES[sh].L[n.lane] || rcLaneAt(n.x, n.y, sh) !== n.lane && n.u > .02 && n.u < .98) || (sh === 'tri' && x.some(n => n.lane === 2))) bad.push('cour ' + sh); }
   console.assert(!bad.length, 'ricochet', bad);
 }
-console.assert(RC_THEMES.every(T => rcMakeBg(T).width === W), 'ricochet thèmes');
-cv.__rh = {st: () => rh, finish: hist => { rh.hist = hist; rh.mode = 'play'; rhCheckEnd(1e9); }, bg: () => rcTheme().name, sel: i => rhSelect(i, rh.diff)};
+console.assert(RC_THEMES.every(T => rcMakeBg(T).width === W) && rcMakeBg(RC_THEMES[0], 'hex').width === W, 'ricochet thèmes');
+$('rcCourt').addEventListener('change', () => { if (rh && (rh.mode === 'ready' || rh.mode === 'over')) rhSelect(rh.song, rh.diff); });
+$('rcSpk').addEventListener('change', () => { if (rh && (rh.mode === 'ready' || rh.mode === 'over')) rhSelect(rh.song, rh.diff); });
+cv.__rh = {court: () => rcSh, st: () => rh, finish: hist => { rh.hist = hist; rh.mode = 'play'; rhCheckEnd(1e9); }, bg: () => rcTheme().name, sel: i => rhSelect(i, rh.diff)};
 ctx.onOpen(() => rhOpen());
 }
 

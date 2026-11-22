@@ -49,3 +49,11 @@ Building a plugin: see the [NeoDex SDK](https://github.com/NDesumeur/neodex-sdk)
 - **The court changes with the song**: brick yard, temple, Japanese garden with raked sand, or ice.
 - **Gamepad**: the d-pad, or the X, A, Y and B buttons, hit the left, bottom, top and right walls. Start starts the song, Select pauses.
 - **End screen**: a curve shows your accuracy along the song, with missed notes in red.
+
+## Two sparks
+
+In the settings, “Sparks: 2” adds a second, blue spark next to the orange one. Each follows its own path and its own gongs (blue gongs are for the blue spark). Chords in the song become two bounces at the same time on two different walls. Two-spark records are kept separately.
+
+## Courts and moving walls
+
+The “Court” option picks the shape: depending on the song, rectangle, hexagon or triangle. Each key keeps its side: ← for the left walls, → for the right ones, ↑ for the top, ↓ for the bottom; in the hexagon, left and right each have two walls, and the triangle has no top wall. Each shape has its own records. The “Walls: Moving” option makes the court breathe: it slowly narrows and widens, with a small pulse on each beat.

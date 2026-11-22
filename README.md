@@ -49,3 +49,11 @@ Développer un plugin : voir le [SDK NeoDex](https://github.com/NDesumeur/neodex
 - **La cour change selon le morceau** : cour de briques, temple, jardin japonais au sable ratissé, ou glace.
 - **Manette** : la croix, ou les boutons X, A, Y et B, frappent les murs gauche, bas, haut et droit. Start lance le morceau, Select met en pause.
 - **Écran de fin** : une courbe montre la précision le long du morceau, avec les notes ratées en rouge.
+
+## Deux étincelles
+
+Dans les réglages, « Étincelles : 2 » lance une deuxième étincelle, bleue, en plus de l'orange. Chacune suit son propre chemin et ses propres gongs (les gongs bleus sont pour la bleue). Les accords du morceau deviennent deux rebonds en même temps sur deux murs différents. Les records à deux étincelles sont gardés à part.
+
+## Les cours et les murs mobiles
+
+L'option « Cour » choisit la forme : selon le morceau, rectangle, hexagone ou triangle. Chaque touche garde son côté : ← pour les murs de gauche, → pour ceux de droite, ↑ pour le haut, ↓ pour le bas ; dans l'hexagone, la gauche et la droite ont chacune deux murs, et le triangle n'a pas de mur du haut. Chaque forme a ses propres records. L'option « Murs : Mobiles » fait respirer la cour : elle se resserre et s'élargit lentement, avec un petit coup sur chaque temps.
